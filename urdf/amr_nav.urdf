@@ -1,0 +1,222 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!--
+  Differential-drive AMR with 2D LiDAR for SLAM and navigation.
+  Extends the base AMR from ros2-amr-tracking-fusion-telemetry with a
+  Hokuyo-style planar laser and Gazebo Harmonic sensor plugins.
+-->
+<robot name="amr_nav">
+
+  <!-- ══════════════════ Materials ══════════════════ -->
+  <material name="teal"><color rgba="0.05 0.50 0.60 1"/></material>
+  <material name="rubber"><color rgba="0.10 0.10 0.12 1"/></material>
+  <material name="dark_grey"><color rgba="0.20 0.20 0.22 1"/></material>
+  <material name="sensor_blue"><color rgba="0.10 0.30 0.80 1"/></material>
+
+  <!-- ══════════════════ Base ══════════════════ -->
+  <link name="base_footprint"/>
+  <joint name="base_joint" type="fixed">
+    <parent link="base_footprint"/>
+    <child link="base_link"/>
+    <origin xyz="0 0 0.2"/>
+  </joint>
+
+  <link name="base_link">
+    <inertial>
+      <mass value="8.0"/>
+      <inertia ixx="0.08" ixy="0" ixz="0" iyy="0.17" iyz="0" izz="0.22"/>
+    </inertial>
+    <visual>
+      <geometry><box size="0.50 0.28 0.15"/></geometry>
+      <material name="teal"/>
+    </visual>
+    <collision>
+      <geometry><box size="0.50 0.28 0.15"/></geometry>
+    </collision>
+  </link>
+
+  <!-- ══════════════════ Drive wheels ══════════════════ -->
+  <link name="left_wheel">
+    <inertial>
+      <mass value="0.5"/>
+      <inertia ixx="0.0013" ixy="0" ixz="0" iyy="0.0025" iyz="0" izz="0.0013"/>
+    </inertial>
+    <visual>
+      <origin rpy="1.57079632679 0 0"/>
+      <geometry><cylinder radius="0.10" length="0.05"/></geometry>
+      <material name="rubber"/>
+    </visual>
+    <collision>
+      <origin rpy="1.57079632679 0 0"/>
+      <geometry><cylinder radius="0.10" length="0.05"/></geometry>
+    </collision>
+  </link>
+  <joint name="left_wheel_joint" type="continuous">
+    <parent link="base_link"/><child link="left_wheel"/>
+    <origin xyz="0 0.20 -0.10"/>
+    <axis xyz="0 1 0"/>
+  </joint>
+
+  <link name="right_wheel">
+    <inertial>
+      <mass value="0.5"/>
+      <inertia ixx="0.0013" ixy="0" ixz="0" iyy="0.0025" iyz="0" izz="0.0013"/>
+    </inertial>
+    <visual>
+      <origin rpy="1.57079632679 0 0"/>
+      <geometry><cylinder radius="0.10" length="0.05"/></geometry>
+      <material name="rubber"/>
+    </visual>
+    <collision>
+      <origin rpy="1.57079632679 0 0"/>
+      <geometry><cylinder radius="0.10" length="0.05"/></geometry>
+    </collision>
+  </link>
+  <joint name="right_wheel_joint" type="continuous">
+    <parent link="base_link"/><child link="right_wheel"/>
+    <origin xyz="0 -0.20 -0.10"/>
+    <axis xyz="0 1 0"/>
+  </joint>
+
+  <!-- ══════════════════ Caster ══════════════════ -->
+  <link name="caster">
+    <inertial>
+      <mass value="0.1"/>
+      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+    </inertial>
+    <visual><geometry><sphere radius="0.05"/></geometry></visual>
+    <collision><geometry><sphere radius="0.05"/></geometry></collision>
+  </link>
+  <joint name="caster_joint" type="fixed">
+    <parent link="base_link"/><child link="caster"/>
+    <origin xyz="-0.18 0 -0.15"/>
+  </joint>
+
+  <!-- ══════════════════ IMU ══════════════════ -->
+  <link name="imu_link">
+    <inertial>
+      <mass value="0.01"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
+    </inertial>
+    <visual>
+      <geometry><box size="0.02 0.02 0.01"/></geometry>
+      <material name="dark_grey"/>
+    </visual>
+  </link>
+  <joint name="imu_joint" type="fixed">
+    <parent link="base_link"/><child link="imu_link"/>
+    <origin xyz="0 0 0.08"/>
+  </joint>
+
+  <!-- ══════════════════ 2D LiDAR ══════════════════ -->
+  <link name="laser_link">
+    <inertial>
+      <mass value="0.15"/>
+      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+    </inertial>
+    <visual>
+      <geometry><cylinder radius="0.04" length="0.05"/></geometry>
+      <material name="sensor_blue"/>
+    </visual>
+    <collision>
+      <geometry><cylinder radius="0.04" length="0.05"/></geometry>
+    </collision>
+  </link>
+  <joint name="laser_joint" type="fixed">
+    <parent link="base_link"/><child link="laser_link"/>
+    <origin xyz="0.20 0 0.10" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ══════════════════ Gazebo Plugins ══════════════════ -->
+
+  <!-- Differential drive -->
+  <gazebo>
+    <plugin filename="gz-sim-diff-drive-system" name="gz::sim::systems::DiffDrive">
+      <left_joint>left_wheel_joint</left_joint>
+      <right_joint>right_wheel_joint</right_joint>
+      <wheel_separation>0.40</wheel_separation>
+      <wheel_radius>0.10</wheel_radius>
+      <odom_publish_frequency>50</odom_publish_frequency>
+      <topic>/cmd_vel</topic>
+      <odom_topic>/wheel_odom</odom_topic>
+      <frame_id>odom</frame_id>
+      <child_frame_id>base_footprint</child_frame_id>
+      <max_linear_velocity>1.5</max_linear_velocity>
+      <max_angular_velocity>2.0</max_angular_velocity>
+      <max_linear_acceleration>2.5</max_linear_acceleration>
+    </plugin>
+    <plugin filename="gz-sim-joint-state-publisher-system"
+            name="gz::sim::systems::JointStatePublisher">
+      <topic>/joint_states</topic>
+    </plugin>
+    <!-- Ground truth odometry for benchmarking -->
+    <plugin filename="gz-sim-odometry-publisher-system"
+            name="gz::sim::systems::OdometryPublisher">
+      <odom_frame>odom</odom_frame>
+      <robot_base_frame>base_footprint</robot_base_frame>
+      <odom_topic>/ground_truth</odom_topic>
+      <odom_publish_frequency>50</odom_publish_frequency>
+      <dimensions>2</dimensions>
+    </plugin>
+  </gazebo>
+
+  <!-- IMU sensor -->
+  <gazebo reference="imu_link">
+    <sensor name="imu" type="imu">
+      <always_on>true</always_on>
+      <update_rate>100</update_rate>
+      <topic>/imu/data</topic>
+      <imu>
+        <angular_velocity>
+          <z>
+            <noise type="gaussian"><mean>0</mean><stddev>0.01</stddev></noise>
+          </z>
+        </angular_velocity>
+        <linear_acceleration>
+          <x>
+            <noise type="gaussian"><mean>0</mean><stddev>0.05</stddev></noise>
+          </x>
+          <y>
+            <noise type="gaussian"><mean>0</mean><stddev>0.05</stddev></noise>
+          </y>
+        </linear_acceleration>
+      </imu>
+    </sensor>
+  </gazebo>
+
+  <!-- 2D LiDAR sensor: 360° scan, 12m range, Hokuyo-style -->
+  <gazebo reference="laser_link">
+    <sensor name="lidar" type="gpu_lidar">
+      <always_on>true</always_on>
+      <update_rate>10</update_rate>
+      <topic>/scan</topic>
+      <lidar>
+        <scan>
+          <horizontal>
+            <samples>720</samples>
+            <resolution>1</resolution>
+            <min_angle>-3.14159</min_angle>
+            <max_angle>3.14159</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.12</min>
+          <max>12.0</max>
+          <resolution>0.01</resolution>
+        </range>
+        <noise>
+          <type>gaussian</type>
+          <mean>0</mean>
+          <stddev>0.005</stddev>
+        </noise>
+      </lidar>
+      <visualize>true</visualize>
+    </sensor>
+  </gazebo>
+
+  <!-- Low-friction caster -->
+  <gazebo reference="caster">
+    <mu1>0.01</mu1>
+    <mu2>0.01</mu2>
+  </gazebo>
+
+</robot>

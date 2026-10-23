@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    container:
+      image: ros:jazzy-ros-base
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          apt-get update && apt-get install -y --no-install-recommends \
+            python3-pytest \
+            python3-numpy \
+            python3-yaml \
+            python3-pil \
+            python3-matplotlib \
+            python3-colcon-common-extensions \
+            ros-jazzy-ament-cmake-pytest
+          rm -rf /var/lib/apt/lists/*
+
+      - name: Run unit test suite
+        run: |
+          . /opt/ros/jazzy/setup.sh
+          pytest test/ -v
+
+      - name: Build with colcon
+        run: |
+          . /opt/ros/jazzy/setup.sh
+          colcon build --symlink-install
+
+      - name: Run colcon test
+        run: |
+          . /opt/ros/jazzy/setup.sh
+          colcon test --event-handlers console_direct+
