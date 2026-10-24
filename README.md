@@ -6,6 +6,7 @@
 [![C++17](https://img.shields.io/badge/C++-17-00599C?logo=c%2B%2B)](https://en.cppreference.com/w/cpp/17)
 [![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python)](https://python.org)
 [![Tests](https://img.shields.io/badge/Tests-18%20Passed-brightgreen)](https://github.com/youseefahmed794/ros2-amr-slam-navigation)
+[![CI](https://img.shields.io/badge/CI-GitHub_Actions-2088FF?logo=githubactions&logoColor=white)](.github/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 An end-to-end, production-grade **LiDAR SLAM and Autonomous Navigation stack** for a differential-drive Autonomous Mobile Robot (AMR). Features graph-based SLAM via SLAM Toolbox, full Navigation 2 (Nav2) integration with AMCL probabilistic localization, a rich Gazebo Harmonic warehouse simulation with moving dynamic obstacles, and an empirical benchmarking framework evaluating path efficiency, localization RMSE, curvature, and jerk.
