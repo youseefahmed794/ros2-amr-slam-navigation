@@ -16,6 +16,7 @@ from amr_slam_navigation.nav_benchmarks import (
     compute_path_efficiency,
     compute_curvature,
     compute_localization_error,
+    compute_relative_pose_error,
     compute_jerk,
     evaluate_navigation,
 )
@@ -129,3 +130,24 @@ def test_evaluate_navigation_success():
     assert d['goal_reached'] is True
     assert 'path_efficiency' in d
     assert 'localization_rmse_m' in d
+    assert 'rpe_trans_rmse_m' in d
+    assert 'rpe_rot_rmse_rad' in d
+
+
+def test_relative_pose_error():
+    # Constant drift of 0.02m per step in translation
+    gt = [
+        PoseStamped(float(i), float(i), 0.1 * i, float(i))
+        for i in range(10)
+    ]
+    # Each step adds 0.02m cumulative error in x
+    est = [
+        PoseStamped(float(i) + 0.02 * i, float(i), 0.1 * i, float(i))
+        for i in range(10)
+    ]
+
+    t_mean, t_rmse, r_mean, r_rmse = compute_relative_pose_error(est, gt, delta_steps=1)
+    assert pytest.approx(t_mean, abs=1e-4) == 0.02
+    assert pytest.approx(t_rmse, abs=1e-4) == 0.02
+    assert pytest.approx(r_mean, abs=1e-5) == 0.0
+    assert pytest.approx(r_rmse, abs=1e-5) == 0.0

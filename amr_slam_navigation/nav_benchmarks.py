@@ -47,6 +47,8 @@ class NavigationMetrics:
     mean_localization_error: float = 0.0
     max_localization_error: float = 0.0
     localization_rmse: float = 0.0
+    rpe_trans_rmse: float = 0.0
+    rpe_rot_rmse: float = 0.0
 
     # Safety
     min_obstacle_clearance: float = float('inf')
@@ -68,6 +70,8 @@ class NavigationMetrics:
             'mean_localization_error_m': round(self.mean_localization_error, 4),
             'max_localization_error_m': round(self.max_localization_error, 4),
             'localization_rmse_m': round(self.localization_rmse, 4),
+            'rpe_trans_rmse_m': round(self.rpe_trans_rmse, 4),
+            'rpe_rot_rmse_rad': round(self.rpe_rot_rmse, 4),
             'min_obstacle_clearance_m': round(self.min_obstacle_clearance, 4),
             'collision_count': self.collision_count,
         }
@@ -181,6 +185,57 @@ def compute_jerk(poses: List[PoseStamped]) -> float:
     return float(np.mean(jerks)) if jerks else 0.0
 
 
+def compute_relative_pose_error(
+    estimated: List[PoseStamped],
+    ground_truth: List[PoseStamped],
+    delta_steps: int = 1,
+) -> Tuple[float, float, float, float]:
+    """Calculate Relative Pose Error (RPE) across delta_steps intervals.
+
+    Measures odometry and SLAM drift per unit interval:
+    Delta_T_gt = T_gt(t)^(-1) * T_gt(t+delta)
+    Delta_T_est = T_est(t)^(-1) * T_est(t+delta)
+    Error = Delta_T_gt^(-1) * Delta_T_est
+
+    Returns:
+        Tuple of (rpe_trans_mean, rpe_trans_rmse, rpe_rot_mean, rpe_rot_rmse)
+    """
+    n = min(len(estimated), len(ground_truth))
+    if n <= delta_steps:
+        return 0.0, 0.0, 0.0, 0.0
+
+    trans_errors = []
+    rot_errors = []
+
+    for i in range(n - delta_steps):
+        j = i + delta_steps
+        dx_gt = ground_truth[j].x - ground_truth[i].x
+        dy_gt = ground_truth[j].y - ground_truth[i].y
+        dyaw_gt = ground_truth[j].yaw - ground_truth[i].yaw
+
+        dx_est = estimated[j].x - estimated[i].x
+        dy_est = estimated[j].y - estimated[i].y
+        dyaw_est = estimated[j].yaw - estimated[i].yaw
+
+        trans_err = math.hypot(dx_est - dx_gt, dy_est - dy_gt)
+        trans_errors.append(trans_err)
+
+        rot_err = abs(math.atan2(
+            math.sin(dyaw_est - dyaw_gt), math.cos(dyaw_est - dyaw_gt)
+        ))
+        rot_errors.append(rot_err)
+
+    trans_arr = np.array(trans_errors)
+    rot_arr = np.array(rot_errors)
+
+    trans_mean = float(np.mean(trans_arr))
+    trans_rmse = float(np.sqrt(np.mean(trans_arr ** 2)))
+    rot_mean = float(np.mean(rot_arr))
+    rot_rmse = float(np.sqrt(np.mean(rot_arr ** 2)))
+
+    return trans_mean, trans_rmse, rot_mean, rot_rmse
+
+
 def evaluate_navigation(
     path: List[PoseStamped],
     ground_truth: List[PoseStamped],
@@ -221,5 +276,7 @@ def evaluate_navigation(
          metrics.max_localization_error,
          metrics.localization_rmse) = compute_localization_error(
             path, ground_truth)
+        _, metrics.rpe_trans_rmse, _, metrics.rpe_rot_rmse = compute_relative_pose_error(
+            path, ground_truth, delta_steps=1)
 
     return metrics
