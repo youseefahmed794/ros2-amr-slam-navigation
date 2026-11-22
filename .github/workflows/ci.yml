@@ -42,3 +42,4 @@ jobs:
         run: |
           . /opt/ros/jazzy/setup.sh
           colcon test --event-handlers console_direct+
+          colcon test-result --verbose

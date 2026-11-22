@@ -58,7 +58,7 @@ def launch_nodes(context):
             package='ros_gz_sim',
             executable='create',
             arguments=['-world', 'warehouse_nav', '-name', 'amr',
-                       '-topic', '/robot_description', '-z', '0.01'],
+                       '-topic', '/robot_description', '-x', '1.5', '-y', '0.0', '-z', '0.01'],
             output='screen',
         ),
 
@@ -104,6 +104,7 @@ def launch_nodes(context):
         Node(
             package='nav2_controller',
             executable='controller_server',
+            remappings=[('cmd_vel', 'cmd_vel_nav')],
             parameters=[nav2_params, sim_params],
             output='screen',
         ),
@@ -120,6 +121,7 @@ def launch_nodes(context):
         Node(
             package='nav2_behaviors',
             executable='behavior_server',
+            remappings=[('cmd_vel', 'cmd_vel_nav')],
             parameters=[nav2_params, sim_params],
             output='screen',
         ),
@@ -144,6 +146,7 @@ def launch_nodes(context):
         Node(
             package='nav2_velocity_smoother',
             executable='velocity_smoother',
+            remappings=[('cmd_vel', 'cmd_vel_nav'), ('cmd_vel_smoothed', 'cmd_vel')],
             parameters=[nav2_params, sim_params],
             output='screen',
         ),
