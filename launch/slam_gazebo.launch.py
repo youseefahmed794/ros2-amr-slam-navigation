@@ -54,7 +54,7 @@ def launch_nodes(context):
             package='ros_gz_sim',
             executable='create',
             arguments=['-world', 'warehouse_nav', '-name', 'amr',
-                       '-topic', '/robot_description', '-z', '0.01'],
+                       '-topic', '/robot_description', '-x', '1.5', '-y', '0.0', '-z', '0.01'],
             output='screen',
         ),
 
@@ -67,15 +67,17 @@ def launch_nodes(context):
         ),
 
         # ── SLAM Toolbox (online async) ──
-        Node(
-            package='slam_toolbox',
-            executable='async_slam_toolbox_node',
-            name='slam_toolbox',
-            parameters=[
-                str(share / 'config' / 'slam_toolbox_params.yaml'),
-                sim_params,
-            ],
-            output='screen',
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(str(
+                Path(get_package_share_directory('slam_toolbox'))
+                / 'launch' / 'online_async_launch.py'
+            )),
+            launch_arguments={
+                'slam_params_file': str(share / 'config' / 'slam_toolbox_params.yaml'),
+                'use_sim_time': 'true',
+                'autostart': 'true',
+                'use_lifecycle_manager': 'false',
+            }.items(),
         ),
 
         # ── RViz ──

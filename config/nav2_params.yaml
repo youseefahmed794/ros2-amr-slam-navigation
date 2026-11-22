@@ -45,7 +45,7 @@ amcl:
     scan_topic: /scan
     set_initial_pose: true
     initial_pose:
-      x: 0.0
+      x: 1.5
       y: 0.0
       z: 0.0
       yaw: 0.0
@@ -72,6 +72,8 @@ bt_navigator:
 controller_server:
   ros__parameters:
     use_sim_time: true
+    odom_topic: /wheel_odom
+    enable_stamped_cmd_vel: false
     controller_frequency: 20.0
     min_x_velocity_threshold: 0.001
     min_y_velocity_threshold: 0.5
@@ -159,8 +161,11 @@ smoother_server:
 behavior_server:
   ros__parameters:
     use_sim_time: true
-    costmap_topic: local_costmap/costmap_raw
-    footprint_topic: local_costmap/published_footprint
+    enable_stamped_cmd_vel: false
+    local_costmap_topic: local_costmap/costmap_raw
+    global_costmap_topic: global_costmap/costmap_raw
+    local_footprint_topic: local_costmap/published_footprint
+    global_footprint_topic: global_costmap/published_footprint
     cycle_frequency: 10.0
     behavior_plugins: ['spin', 'backup', 'drive_on_heading', 'wait', 'assisted_teleop']
     spin:
@@ -173,7 +178,8 @@ behavior_server:
       plugin: nav2_behaviors::Wait
     assisted_teleop:
       plugin: nav2_behaviors::AssistedTeleop
-    global_frame: odom
+    local_frame: odom
+    global_frame: map
     robot_base_frame: base_footprint
     transform_tolerance: 0.1
     simulate_ahead_time: 2.0
@@ -184,6 +190,8 @@ behavior_server:
 velocity_smoother:
   ros__parameters:
     use_sim_time: true
+    enable_stamped_cmd_vel: false
+    velocity_timeout: 1.0
     smoothing_frequency: 20.0
     scale_velocities: false
     feedback: OPEN_LOOP
@@ -219,10 +227,11 @@ local_costmap:
       width: 5
       height: 5
       resolution: 0.05
-      robot_radius: 0.22
+      footprint: "[[0.25, 0.225], [-0.25, 0.225], [-0.25, -0.225], [0.25, -0.225]]"
+      footprint_padding: 0.01
       plugins: ['obstacle_layer', 'inflation_layer']
       obstacle_layer:
-        plugin: nav2_costmap_2d::ObstacleCostLayer
+        plugin: nav2_costmap_2d::ObstacleLayer
         enabled: true
         observation_sources: scan
         scan:
@@ -249,7 +258,8 @@ global_costmap:
       publish_frequency: 1.0
       global_frame: map
       robot_base_frame: base_footprint
-      robot_radius: 0.22
+      footprint: "[[0.25, 0.225], [-0.25, 0.225], [-0.25, -0.225], [0.25, -0.225]]"
+      footprint_padding: 0.01
       resolution: 0.05
       track_unknown_space: true
       plugins: ['static_layer', 'obstacle_layer', 'inflation_layer']
@@ -257,7 +267,7 @@ global_costmap:
         plugin: nav2_costmap_2d::StaticLayer
         map_subscribe_transient_local: true
       obstacle_layer:
-        plugin: nav2_costmap_2d::ObstacleCostLayer
+        plugin: nav2_costmap_2d::ObstacleLayer
         enabled: true
         observation_sources: scan
         scan:

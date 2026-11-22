@@ -43,6 +43,7 @@ if(BUILD_TESTING)
   ament_add_pytest_test(test_config test/test_config.py)
   ament_add_pytest_test(test_waypoint test/test_waypoint_logic.py)
   ament_add_pytest_test(test_benchmarks test/test_benchmarks.py)
+  ament_add_pytest_test(test_robot_support test/test_robot_support.py)
 endif()
 
 ament_package()
